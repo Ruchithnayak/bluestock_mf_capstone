@@ -11,6 +11,7 @@ from sqlalchemy import create_engine
 RAW_DIR = "data/raw"
 PROCESSED_DIR = "data/processed"
 DB_PATH = "bluestock_mf.db"
+engine = create_engine(f"sqlite:///{DB_PATH}")
 os.makedirs(PROCESSED_DIR, exist_ok=True)
 
 # ---------------------------------------------------------------------------
@@ -32,12 +33,27 @@ benchmark = pd.read_csv(f"{RAW_DIR}/10_benchmark_indices.csv", parse_dates=["dat
 # TRANSFORM
 # ---------------------------------------------------------------------------
 print("Transforming NAV history...")
+nav_history = nav_history.drop_duplicates()
+nav_history = nav_history[nav_history["nav"] > 0]
 nav_history = nav_history.sort_values(["amfi_code", "date"])
 nav_history["nav"] = nav_history.groupby("amfi_code")["nav"].ffill()
 nav_history["daily_return_pct"] = nav_history.groupby("amfi_code")["nav"].pct_change() * 100
 nav_history = nav_history.dropna(subset=["daily_return_pct"]).reset_index(drop=True)
 
 print("Transforming transactions...")
+transactions = transactions.drop_duplicates()
+
+mapping = {
+    "SIP": "SIP",
+    "LUMP SUM": "LUMPSUM",
+    "LUMPSUM": "LUMPSUM",
+    "REDEMPTION": "REDEMPTION"
+}
+
+transactions["transaction_type"] = (
+    transactions["transaction_type"]
+    .replace(mapping)
+)
 transactions["transaction_type"] = transactions["transaction_type"].str.upper().str.strip()
 transactions = transactions[transactions["amount"] > 0]
 transactions["kyc_status"] = transactions["kyc_status"].str.title()
@@ -120,22 +136,22 @@ computed_performance = pd.DataFrame(perf_records)
 # ---------------------------------------------------------------------------
 # LOAD
 # ---------------------------------------------------------------------------
-print("Loading into SQLite database...")
-if os.path.exists(DB_PATH):
-    os.remove(DB_PATH)
-engine = create_engine(f"sqlite:///{DB_PATH}")
+print("Validating expense ratio...")
 
-fund_master.to_sql("dim_fund", engine, index=False, if_exists="replace")
-dim_date.to_sql("dim_date", engine, index=False, if_exists="replace")
-nav_history.to_sql("fact_nav", engine, index=False, if_exists="replace")
-transactions.to_sql("fact_transactions", engine, index=False, if_exists="replace")
-computed_performance.to_sql("fact_performance", engine, index=False, if_exists="replace")
-portfolio.to_sql("fact_portfolio", engine, index=False, if_exists="replace")
-aum.to_sql("fact_aum", engine, index=False, if_exists="replace")
-sip.to_sql("fact_sip_industry", engine, index=False, if_exists="replace")
-cat_inflows.to_sql("fact_category_inflows", engine, index=False, if_exists="replace")
-folio.to_sql("fact_industry_folio", engine, index=False, if_exists="replace")
-benchmark.to_sql("fact_benchmark", engine, index=False, if_exists="replace")
+fund_master["expense_ratio_pct"] = pd.to_numeric(
+    fund_master["expense_ratio_pct"],
+    errors="coerce"
+)
+
+expense_anomalies = fund_master[
+    (fund_master["expense_ratio_pct"] < 0.1) |
+    (fund_master["expense_ratio_pct"] > 2.5)
+]
+
+expense_anomalies.to_csv(
+    f"{PROCESSED_DIR}/expense_ratio_anomalies.csv",
+    index=False
+)
 
 # Create indexes
 with sqlite3.connect(DB_PATH) as conn:
@@ -160,3 +176,15 @@ benchmark.to_csv(f"{PROCESSED_DIR}/fact_benchmark.csv", index=False)
 print(f"ETL complete. Database: {DB_PATH}")
 tables = pd.read_sql("SELECT name FROM sqlite_master WHERE type='table'", engine).name.tolist()
 print(f"Tables loaded: {tables}")
+
+print("\n========== ROW COUNTS ==========")
+
+for table in tables:
+    count = pd.read_sql(
+        f"SELECT COUNT(*) AS cnt FROM {table}",
+        engine
+    ).iloc[0]["cnt"]
+
+    print(f"{table:30} {count}")
+
+print("================================")
