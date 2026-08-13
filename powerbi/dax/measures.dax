@@ -1,0 +1,192 @@
+// =====================================================
+// BLUESTOCK MF - POWER BI MEASURES
+// =====================================================
+
+// -------------------------
+// AUM
+// -------------------------
+
+Total AUM =
+SUM(fact_aum[aum_cr])
+
+Total AUM ₹ Cr =
+[Total AUM]
+
+Total AUM ₹ Lakh Cr =
+DIVIDE([Total AUM], 100000)
+
+
+// -------------------------
+// FOLIOS
+// -------------------------
+
+Total Folios =
+SUM(fact_industry_folio[folio_count])
+
+Total Folios Cr =
+DIVIDE([Total Folios], 10000000)
+
+
+// -------------------------
+// SCHEMES
+// -------------------------
+
+Total Schemes =
+DISTINCTCOUNT(dim_fund[amfi_code])
+
+
+// -------------------------
+// SIP
+// -------------------------
+
+SIP Inflows =
+SUM(fact_sip_industry[sip_inflow_cr])
+
+SIP Inflows ₹ Cr =
+[SIP Inflows]
+
+SIP Inflows ₹ K Cr =
+DIVIDE([SIP Inflows], 1000)
+
+
+// -------------------------
+// TRANSACTIONS
+// -------------------------
+
+Transaction Amount =
+SUM(fact_transactions[amount])
+
+Transaction Count =
+COUNTROWS(fact_transactions)
+
+Average Transaction Amount =
+DIVIDE(
+    [Transaction Amount],
+    [Transaction Count]
+)
+
+
+// -------------------------
+// NAV
+// -------------------------
+
+Average NAV =
+AVERAGE(fact_nav[nav])
+
+Minimum NAV =
+MIN(fact_nav[nav])
+
+Maximum NAV =
+MAX(fact_nav[nav])
+
+
+// -------------------------
+// PERFORMANCE
+// -------------------------
+
+Average Return =
+AVERAGE(fact_performance[return_pct])
+
+Average Risk =
+AVERAGE(fact_performance[stddev_pct])
+
+Sharpe Ratio =
+AVERAGE(fact_performance[sharpe_ratio])
+
+
+// -------------------------
+// FUND SCORE
+// -------------------------
+
+Fund Score =
+VAR ReturnScore =
+    COALESCE([Average Return], 0)
+
+VAR RiskScore =
+    COALESCE([Average Risk], 0)
+
+VAR SharpeScore =
+    COALESCE([Sharpe Ratio], 0)
+
+RETURN
+    (ReturnScore * 0.50)
+    + (SharpeScore * 0.30)
+    - (RiskScore * 0.20)
+
+
+// -------------------------
+// BENCHMARK
+// -------------------------
+
+Average Benchmark =
+AVERAGE(fact_benchmark[index_value])
+
+
+// -------------------------
+// NET INFLOW
+// -------------------------
+
+Total Inflow =
+CALCULATE(
+    [Transaction Amount],
+    fact_transactions[transaction_type] = "SIP"
+)
+
+Total Redemption =
+CALCULATE(
+    [Transaction Amount],
+    fact_transactions[transaction_type] = "Redemption"
+)
+
+Net Inflow =
+[Total Inflow] - [Total Redemption]
+
+
+// -------------------------
+// INVESTOR ANALYTICS
+// -------------------------
+
+Average SIP Amount =
+CALCULATE(
+    AVERAGE(fact_transactions[amount]),
+    fact_transactions[transaction_type] = "SIP"
+)
+
+SIP Transaction Count =
+CALCULATE(
+    COUNTROWS(fact_transactions),
+    fact_transactions[transaction_type] = "SIP"
+)
+
+Lumpsum Amount =
+CALCULATE(
+    [Transaction Amount],
+    fact_transactions[transaction_type] = "Lumpsum"
+)
+
+Redemption Amount =
+CALCULATE(
+    [Transaction Amount],
+    fact_transactions[transaction_type] = "Redemption"
+)
+
+
+// -------------------------
+// CATEGORY
+// -------------------------
+
+Category Net Inflow =
+SUM(fact_category_inflows[net_inflow_cr])
+
+
+// -------------------------
+// YEAR / MONTH
+// -------------------------
+
+Monthly Transaction Volume =
+CALCULATE(
+    COUNTROWS(fact_transactions)
+)
+
+Monthly Transaction Amount =
+SUM(fact_transactions[amount])

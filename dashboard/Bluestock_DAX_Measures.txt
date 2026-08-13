@@ -1,0 +1,46 @@
+-- Bluestock MF Power BI measures
+Total AUM (₹ Cr) =
+SUM(fact_aum[aum_crore])
+
+SIP Inflows (₹ Cr) =
+SUM(fact_sip_industry[sip_inflow_crore])
+
+Total Folios (Cr) =
+MAX(fact_industry_folio[total_folios_crore])
+
+Scheme Count =
+DISTINCTCOUNT(dim_fund[amfi_code])
+
+Average 1Y Return (%) =
+AVERAGE(fact_performance[return_1yr_pct])
+
+Average Risk (%) =
+AVERAGE(fact_performance[std_dev_pct])
+
+Average Sharpe =
+AVERAGE(fact_performance[sharpe_ratio])
+
+Total Transaction Amount =
+SUM(fact_transactions[amount])
+
+Transaction Count =
+COUNTROWS(fact_transactions)
+
+Investor Count =
+DISTINCTCOUNT(fact_transactions[investor_id])
+
+Average SIP Amount =
+CALCULATE(
+    AVERAGE(fact_transactions[amount]),
+    CONTAINSSTRING(LOWER(fact_transactions[transaction_type]), "sip")
+)
+
+Net Inflow (₹ Cr) =
+SUM(fact_category_inflows[net_inflow_crore])
+
+Performance Score =
+VAR ReturnScore = [Average 1Y Return (%)]
+VAR SharpeScore = [Average Sharpe]
+VAR RiskScore = [Average Risk (%)]
+RETURN
+    ReturnScore + (SharpeScore * 10) - RiskScore

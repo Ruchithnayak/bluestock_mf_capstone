@@ -155,10 +155,10 @@ expense_anomalies.to_csv(
 
 # Create indexes
 with sqlite3.connect(DB_PATH) as conn:
-    conn.execute("CREATE INDEX idx_nav ON fact_nav(amfi_code, date)")
-    conn.execute("CREATE INDEX idx_tx ON fact_transactions(amfi_code, date)")
-    conn.execute("CREATE INDEX idx_perf ON fact_performance(amfi_code)")
-    conn.execute("CREATE INDEX idx_bench ON fact_benchmark(index_name, date)")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_nav ON fact_nav(amfi_code, date)")
+conn.execute("CREATE INDEX IF NOT EXISTS idx_tx ON fact_transactions(amfi_code, date)")
+conn.execute("CREATE INDEX IF NOT EXISTS idx_perf ON fact_performance(amfi_code)")
+conn.execute("CREATE INDEX IF NOT EXISTS idx_bench ON fact_benchmark(index_name, date)")
 
 # Save processed CSVs
 fund_master.to_csv(f"{PROCESSED_DIR}/dim_fund.csv", index=False)

@@ -1,0 +1,36 @@
+{
+  "name": "Bluestock MF",
+  "dataColors": [
+    "#1565C0",
+    "#0D47A1",
+    "#42A5F5",
+    "#26A69A",
+    "#FFB300",
+    "#EF5350",
+    "#7E57C2",
+    "#78909C"
+  ],
+  "background": "#F7F9FC",
+  "foreground": "#17324D",
+  "tableAccent": "#1565C0",
+  "good": "#2E7D32",
+  "neutral": "#F9A825",
+  "bad": "#C62828",
+  "textClasses": {
+    "title": {
+      "fontFace": "Aptos Display",
+      "fontSize": 18,
+      "color": "#123B68"
+    },
+    "header": {
+      "fontFace": "Aptos",
+      "fontSize": 11,
+      "color": "#17324D"
+    },
+    "callout": {
+      "fontFace": "Aptos Display",
+      "fontSize": 24,
+      "color": "#123B68"
+    }
+  }
+}
