@@ -1,6 +1,7 @@
-import requests
 import csv
 import json
+from urllib.error import HTTPError, URLError
+from urllib.request import urlopen
 
 def fetch_financial_data(ticker="RELIANCE.BSE"):
     """
@@ -11,10 +12,8 @@ def fetch_financial_data(ticker="RELIANCE.BSE"):
     url = f"https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol={ticker}&apikey=demo"
     
     try:
-        response = requests.get(url)
-        response.raise_for_status()  # Check HTTP Status Code
-        
-        json_data = response.json()
+        with urlopen(url, timeout=30) as response:
+            json_data = json.load(response)
         print("API JSON Response successfully retrieved:")
         print(json.dumps(json_data, indent=2))
         
@@ -40,7 +39,7 @@ def fetch_financial_data(ticker="RELIANCE.BSE"):
             writer.writerows(parsed_record)
         print(f"Data successfully saved to {output_path}")
 
-    except requests.exceptions.RequestException as e:
+    except (HTTPError, URLError, TimeoutError) as e:
         print(f"Failed to fetch data from API: {e}")
 
 if __name__ == "__main__":
